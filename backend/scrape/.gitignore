@@ -1,0 +1,12 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+professor_reviews.json
+rit_prof.txt
+rit_professors.txt
+prof_review.txt

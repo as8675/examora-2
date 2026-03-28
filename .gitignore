@@ -1,0 +1,16 @@
+# Ignore node_modules and system files
+backend/node_modules/
+.env
+.DS_Store
+*.log
+backend/scraper_api/venv/
+tests/
+tests-examples/
+
+package-lock.json
+package.json
+playwright.config.ts
+backend/scraper_api/__pycache__/
+backend/scraper_api/
+node_modules/
+
