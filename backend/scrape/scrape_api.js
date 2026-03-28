@@ -2,14 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { chromium } = require("playwright");
 const axios = require("axios");
-const dotenv = require("dotenv");
-const authMiddleware = require("../authMiddleware"); 
 
-dotenv.config();
-const userPoolId = process.env.COGNITO_USER_POOL_ID;
-const region = process.env.AWS_REGION;
-
-router.post("/professor", authMiddleware(userPoolId, region), async (req, res) => {
+router.post("/professor", async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Professor name required" });
 

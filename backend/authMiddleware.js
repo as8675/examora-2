@@ -1,24 +1,6 @@
 // authMiddleware.js
 const jwt = require("jsonwebtoken");
-const jwkToPem = require("jwk-to-pem");
-const axios = require("axios");
-
-let pemsCache = null;
-
-async function getPems(userPoolId, region) {
-  if (pemsCache) return pemsCache;
-
-  const url = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
-  const { data } = await axios.get(url);
-
-  const pems = {};
-  data.keys.forEach((key) => {
-    pems[key.kid] = jwkToPem(key);
-  });
-
-  pemsCache = pems;
-  return pems;
-}
+const jwksClient = require("jwks-rsa");
 
 module.exports = (userPoolId, region) => {
   return async (req, res, next) => {
@@ -32,9 +14,12 @@ module.exports = (userPoolId, region) => {
       const decoded = jwt.decode(token, { complete: true });
       if (!decoded) return res.status(401).json({ error: "Unauthorized: Cannot decode token" });
 
-      const pems = await getPems(userPoolId, region);
-      const pem = pems[decoded.header.kid];
-      if (!pem) return res.status(401).json({ error: "Unauthorized: Invalid token key" });
+      const client = jwksClient({
+        jwksUri: `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`
+      });
+
+      const key = await client.getSigningKey(decoded.header.kid);
+      const pem = key.getPublicKey();
 
       jwt.verify(token, pem, (err, payload) => {
         if (err) return res.status(401).json({ error: "Unauthorized: Invalid signature" });
