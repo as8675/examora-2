@@ -10,12 +10,19 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 
+// Health check route (early) for ALB target group
+app.get("/", (req, res) => res.status(200).send("OK"));
+
 app.use(
   cors({
-    origin: ["http://localhost:8080"], // Vite frontend
+    // Allow your ALB URL and localhost (for local testing)
+    origin: [
+      "http://localhost:8080", 
+      "http://examora-alb-945905355.us-east-1.elb.amazonaws.com"
+    ], 
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // optional, only if using cookies
+    credentials: true,
   })
 );
 
@@ -51,6 +58,9 @@ app.use("/api", authMiddleware(userPoolId, region), assistantRoutes);
 app.use("/api", authMiddleware(userPoolId, region), examTierRoutes);
 app.use("/api", authMiddleware(userPoolId, region), assistantQuestionsRoutes);
 
-app.listen(3000, () => {
-  console.log("Master API running on http://localhost:3000");
+// Health check route
+app.get("/", (req, res) => res.status(200).send("OK"));
+
+app.listen(3000, "0.0.0.0", () => {
+  console.log("Master API running on port 3000 (0.0.0.0)");
 });

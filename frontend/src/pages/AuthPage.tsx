@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/auth";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000") + "/auth";
 
 const AuthPage = () => {
+  console.log("Vite is using this API URL:", import.meta.env.VITE_API_BASE_URL);
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
 

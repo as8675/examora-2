@@ -85,9 +85,10 @@ router.post("/professor", async (req, res) => {
 
     await browser.close();
 
-    // Send to professors API for storage
+    // Send to professors API for storage (use internal service URL for containers)
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
     await axios.post(
-      "http://localhost:3000/api/professors",
+      `${apiBaseUrl}/api/professors`,
       {
         professor: name,
         profile: profLink,

@@ -6,6 +6,8 @@ services:
       - "3000:3000" # MATCHES server.js app.listen(3000)
     env_file:
       - ./backend/.env
+    environment:
+      - API_BASE_URL=http://backend:3000 # Internal service URL for container communication
     restart: unless-stopped
 
   frontend:
