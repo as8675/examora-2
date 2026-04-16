@@ -1,0 +1,80 @@
+{
+  "pipeline": {
+    "name": "examora-backend-pipeline",
+    "roleArn": "arn:aws:iam::985539782333:role/examora-backend-pipeline-role",
+    "artifactStore": {
+      "type": "S3",
+      "location": "codepipeline-us-east-1-60097807423"
+    },
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "SourceAction",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "AWS",
+              "provider": "CodeStarSourceConnection",
+              "version": "1"
+            },
+            "outputArtifacts": [{ "name": "SourceArtifact" }],
+            "configuration": {
+              "ConnectionArn": "arn:aws:codeconnections:us-east-1:985539782333:connection/89c8c68a-c111-4276-bda0-c797f7509321",
+              "FullRepositoryId": "as8675/examora-2",
+              "BranchName": "master",
+              "OutputArtifactFormat": "CODE_ZIP"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "BuildAction",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "inputArtifacts": [{ "name": "SourceArtifact" }],
+            "outputArtifacts": [{ "name": "BuildArtifact" }],
+            "configuration": {
+              "ProjectName": "examora-backend-build"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Deploy",
+        "actions": [
+          {
+            "name": "DeployAction",
+            "actionTypeId": {
+              "category": "Deploy",
+              "owner": "AWS",
+              "provider": "CodeDeployToECS",
+              "version": "1"
+            },
+            "inputArtifacts": [
+              { "name": "SourceArtifact" },
+              { "name": "BuildArtifact" }
+            ],
+            "configuration": {
+              "ApplicationName": "examora-backend-deploy",
+              "DeploymentGroupName": "examora-backend-dg",
+              "TaskDefinitionTemplateArtifact": "SourceArtifact",
+              "TaskDefinitionTemplatePath": "taskdef.json",
+              "AppSpecTemplateArtifact": "SourceArtifact",
+              "AppSpecTemplatePath": "appspec.yml",
+              "Image1ArtifactName": "BuildArtifact",
+              "Image1ContainerName": "IMAGE1_NAME"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
