@@ -1,5 +1,5 @@
 ﻿{
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:985539782333:task-definition/examora-backend-task:5",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:985539782333:task-definition/examora-backend-task:12",
     "containerDefinitions": [
         {
             "name": "examora-backend-container",
@@ -43,9 +43,10 @@
         }
     ],
     "family": "examora-backend-task",
+    "taskRoleArn": "arn:aws:iam::985539782333:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::985539782333:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 5,
+    "revision": 12,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -60,6 +61,9 @@
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
@@ -92,7 +96,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2026-04-04T20:20:04.440Z",
-    "registeredBy": "arn:aws:iam::985539782333:root",
+     "registeredAt": "2026-04-16T21:59:16.687Z",
+     "registeredBy": "arn:aws:iam::985539782333:root",
     "enableFaultInjection": false
 }
