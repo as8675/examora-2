@@ -11,7 +11,7 @@ const region = process.env.AWS_REGION || "us-east-1";
 const client = new DynamoDBClient({ region });
 const dynamodb = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = "ProfessorsReviews";
+const TABLE_NAME = process.env.TABLE_NAME || "ProfessorsReviews";
 
 // Helper: check if timestamp is older than 1 month
 function isOlderThanOneMonth(timestamp) {

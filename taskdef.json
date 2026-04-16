@@ -22,7 +22,8 @@
                 },
                 { "name": "COGNITO_USER_POOL_ID", "value": "us-east-1_cb7HTbTUZ" },
                 { "name": "COGNITO_CLIENT_ID", "value": "6gs5jc7bp448dsmenv9uc3h4hl" },
-                { "name": "AWS_REGION", "value": "us-east-1" }
+                { "name": "AWS_REGION", "value": "us-east-1" },
+                { "name": "TABLE_NAME", "value": "ProfessorsReviews" }
             ],
             "environmentFiles": [],
             "mountPoints": [],
