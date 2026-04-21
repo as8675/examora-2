@@ -1,149 +1,128 @@
 # Examora
 
-## Setup Instructions
+Examora is an AI-powered coursework and professor-evaluation platform built on a highly available, serverless microservice architecture.
 
-### Backend Setup
+---
 
-1. **Install Dependencies**
-   ```bash
-   cd backend
-   npm install
-   ```
+## 🏗️ Architecture Overview
 
-2. **Configure AWS Credentials**
+This project has been transformed from a local application into a cloud-native platform utilizing AWS.
 
-   Bedrock functionality requires AWS credentials. You have three options:
+| Layer              | Technology                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| **Compute**        | Dockerized Node.js (Backend) & React (Frontend) on **AWS ECS with Fargate**         |
+| **Networking**     | **Application Load Balancer (ALB)** across private subnets                          |
+| **Database**       | **Amazon DynamoDB** - scalable, NoSQL data storage                                  |
+| **Authentication** | **Amazon Cognito** - secure user registration & JWT token generation                |
+| **AI Integration** | **Amazon Bedrock** (Anthropic Claude 3 Haiku) - contextual question generation      |
+| **CI/CD Pipeline** | **AWS CodePipeline, CodeBuild & CodeDeploy** - Zero-Downtime Blue/Green deployments |
 
-   **Option A: Environment Variables (Recommended for Development)**
-   
-   Create a `.env` file in the `backend` directory:
-   ```env
-   AWS_REGION=us-east-1
-   AWS_ACCESS_KEY_ID=your-access-key-id-here
-   AWS_SECRET_ACCESS_KEY=your-secret-access-key-here
-   COGNITO_USER_POOL_ID=your-user-pool-id-here
-   ```
-   
-   Copy `env.example` to `.env` and fill in your values:
-   ```bash
-   cp env.example .env
-   # Then edit .env with your actual credentials
-   ```
+---
 
-   **Option B: AWS Credentials File**
-   
-   Configure AWS CLI credentials:
-   ```bash
-   aws configure
-   ```
-   
-   This creates `~/.aws/credentials` and `~/.aws/config` files.
-   
-   **Option C: IAM Role (For Production/EC2)**
-   
-   If running on EC2 or Lambda, use IAM roles instead of credentials.
+## 🚀 Deployment Workflow (CI/CD)
 
-3. **AWS Bedrock Setup**
-
-   For Bedrock to work, ensure:
-   
-   - **AWS Account**: You have an active AWS account
-   - **Bedrock Access**: Bedrock service is enabled in your AWS account
-   - **Model Access**: Claude 3 Haiku model is enabled in Bedrock
-     - Go to AWS Console → Bedrock → Model access
-     - Request access to "Anthropic Claude 3 Haiku"
-   - **IAM Permissions**: Your AWS credentials have the following permissions:
-     ```json
-     {
-       "Version": "2012-10-17",
-       "Statement": [
-         {
-           "Effect": "Allow",
-           "Action": [
-             "bedrock:InvokeModel",
-             "bedrock:InvokeModelWithResponseStream"
-           ],
-           "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
-         },
-         {
-           "Effect": "Allow",
-           "Action": [
-             "textract:DetectDocumentText",
-             "comprehend:DetectKeyPhrases"
-           ],
-           "Resource": "*"
-         }
-       ]
-     }
-     ```
-
-4. **Verify AWS Credentials**
-   
-   Test your AWS setup:
-   ```bash
-   aws sts get-caller-identity
-   ```
-   
-   This should return your AWS account ID and user ARN.
-
-5. **Run the Backend Server**
-   ```bash
-   npm start
-   # or
-   node server.js
-   ```
-
-### Frontend Setup
+Deploying updates to Examora requires no manual server configuration. The entire infrastructure is managed via a fully automated CI/CD pipeline.
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# 1. Make your changes locally
+git commit -m "feat: your new feature"
+
+# 2. Push to trigger the pipeline
+git push
 ```
 
-## Troubleshooting Bedrock Issues
+GitHub automatically triggers **AWS CodePipeline**. From there:
 
-If Bedrock is not working:
+- **CodeBuild** compiles a fresh Docker image
+- **CodeDeploy** spins up replacement containers and runs health checks
+- **Load Balancer traffic** is shifted to the new version with **zero downtime**
 
-1. **Check AWS Credentials**
-   - Verify credentials are set: `aws sts get-caller-identity`
-   - Ensure `.env` file exists and has correct values (if using environment variables)
-   - Check AWS credentials file exists: `~/.aws/credentials`
+### Managing Environment Variables in Production
 
-2. **Verify Bedrock Access**
-   - Log into AWS Console → Bedrock → Model access
-   - Confirm "Anthropic Claude 3 Haiku" shows as "Access granted"
-   - If not, click "Request model access" and wait for approval
+Production environment variables (e.g. `COGNITO_USER_POOL_ID`, DynamoDB table names) are **not** stored in a `.env` file. They are securely injected at runtime via the `taskdef.json` file in the root of the repository.
 
-3. **Check Region Configuration**
-   - Ensure `AWS_REGION` in `.env` matches the region where Bedrock is enabled
-   - Common regions: `us-east-1`, `us-east-2`, `us-west-2`
+---
 
-4. **Verify IAM Permissions**
-   - Your IAM user/role needs `bedrock:InvokeModel` permission
-   - Check IAM console for your user's permissions
+## 🏗️ System Design & Architecture
 
-5. **Test Bedrock Directly**
-   ```bash
-   aws bedrock-runtime invoke-model \
-     --model-id anthropic.claude-3-haiku-20240307-v1:0 \
-     --body '{"anthropic_version":"bedrock-2023-05-31","max_tokens":100,"messages":[{"role":"user","content":[{"type":"text","text":"Hello"}]}]}' \
-     --region us-east-1 \
-     output.json
-   ```
+Examora utilizes a modern, serverless microservice architecture designed for high availability, security, and zero-downtime deployments. The system is conceptually divided into two pipelines: the **Live Application Flow** (User Experience) and the **Automated CI/CD Pipeline** (Developer Experience).
 
-6. **Check Console Logs**
-   - Look for error messages in the backend console
-   - Common errors:
-     - `AccessDeniedException`: Check IAM permissions
-     - `ValidationException`: Check model ID format
-     - `UnrecognizedClientException`: Check AWS credentials
+### 1. The Live Application Flow
 
-## Common Issues
+When a user interacts with Examora, the request travels through a secure, decoupled network:
 
-- **"Credentials not found"**: Set up AWS credentials (see above)
-- **"AccessDenied"**: Add Bedrock permissions to your IAM user
-- **"Model not found"**: Enable Claude 3 Haiku in Bedrock console
-- **"Invalid region"**: Ensure the region supports Bedrock
+- **Authentication (Amazon Cognito):** Before accessing core features, users authenticate via Cognito. Upon successful login, the client receives a secure JWT token required for all backend API access.
+- **The Front Door (Application Load Balancer):** All web traffic hits an ALB deployed across private subnets. The ALB acts as a traffic cop, distributing incoming requests across healthy containers and terminating idle connections.
+- **Serverless Compute (AWS ECS with Fargate):** The application logic runs within Dockerized microservices (React frontend and Node.js backend) orchestrated by ECS. Fargate abstracts the underlying hardware, providing on-demand compute that scales dynamically without managing EC2 instances.
+- **AI Engine (Amazon Bedrock):** When a user requests question generation, the backend container securely invokes the Anthropic Claude 3 Haiku model via AWS Bedrock, passing in scraped professor and course data to synthesize contextual questions.
+- **Data Persistence (Amazon DynamoDB):** All processed professor reviews, generated coursework, and system state are stored in a fully managed NoSQL DynamoDB table for rapid, single-digit millisecond retrieval.
 
+### 2. CI/CD Pipeline (The Automation Engine)
 
+Infrastructure updates and code deployments are entirely hands-off. Pushing to the repository triggers a fully automated assembly line:
+
+- **Source (GitHub):** A webhook listens for commits to the `master` branch.
+- **Orchestration (AWS CodePipeline):** Acts as the overarching manager, coordinating the flow of new code through the build and deployment phases.
+- **Build Phase (AWS CodeBuild & ECR):** CodeBuild spins up a temporary build environment, compiles new Docker images from the latest `Dockerfile`, and pushes artifacts securely to the Amazon Elastic Container Registry (ECR).
+- **Deployment Phase (AWS CodeDeploy):** Takes the new image from ECR and the updated `taskdef.json` blueprint, then orchestrates injection of the new container into the live ECS cluster.
+
+### 3. Blue/Green Deployment Strategy (Zero-Downtime)
+
+To ensure users never experience an outage or encounter broken code, Examora uses a strict Blue/Green deployment model:
+
+1. CodeDeploy spins up the new **(Green)** container alongside the active **(Blue)** container in the background.
+2. CodeDeploy injects the required runtime environment variables (Cognito IDs, DB Table Names).
+3. The Load Balancer pings the new container with a health check.
+4. **The Safe Swap:** If the health check passes, the ALB dynamically shifts 100% of live traffic to the new container and safely terminates the old one. If the health check fails (e.g., a fatal code error), CodeDeploy instantly destroys the new container and aborts the deployment. Live users remain completely unaffected.
+
+### 4. Security & IAM (Least Privilege Architecture)
+
+Examora does not rely on hardcoded AWS `.env` credentials in production. System access is governed by strict, decoupled IAM roles:
+
+- **Task Execution Role (Infrastructure):** Grants the ECS service permission to pull Docker images from ECR and stream application logs to Amazon CloudWatch.
+- **Task Role (Application):** The runtime badge. Grants the Node.js application explicit, limited permissions (`AmazonDynamoDBFullAccess` and `AmazonBedrockFullAccess`), allowing it to securely invoke AI models and persist data without exposing root access keys.
+
+---
+
+## 🔐 AWS Permissions & Security
+
+Examora uses **IAM Roles** instead of hardcoded credentials in production.
+
+### ECS Task Role
+
+The `ecsTaskExecutionRole` (assigned as the **Task Role** in `taskdef.json`) must have the following IAM policies attached for the backend container to communicate with AWS services:
+
+- `AmazonDynamoDBFullAccess` : to read/write scraped data
+- `AmazonBedrockFullAccess` : to generate questions via Claude 3
+
+### Bedrock Model Access
+
+To use AI generation features, your AWS account must be granted access to the model:
+
+1. Go to **AWS Console → Bedrock → Model access**
+2. Confirm **Anthropic Claude 3 Haiku** is marked as **"Access granted"**
+
+---
+
+## 🛠️ Cloud Troubleshooting
+
+If routes like `/scrape/professor` return a `500 Internal Server Error` while running in AWS, the cause is typically missing environment variables or insufficient IAM permissions.
+
+### 1. Check ECS Logs
+
+Navigate to **AWS Console → ECS → Clusters → Examora**, open your running Backend Task, and inspect the **Logs** tab. Look for errors such as `AccessDeniedException` or DynamoDB connection failures.
+
+### 2. Verify `taskdef.json`
+
+If you added a new third-party API or AWS service, ensure all required environment variables are listed in the `environment` array of `taskdef.json` before pushing.
+
+### 3. Verify IAM Policies
+
+If logs show an `AccessDenied` error for Bedrock or DynamoDB, confirm that the correct policies are attached to your ECS Task Role in the **IAM Console**.
+
+### 4. CodeDeploy Health Check Failures
+
+If a deployment fails and rolls back, CodeDeploy intercepted a crashing container. Check:
+
+- **CodeBuild logs** — confirm the Docker image compiled successfully
+- **ECS logs** — confirm the container isn't missing a required boot variable
